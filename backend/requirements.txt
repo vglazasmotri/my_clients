@@ -1,0 +1,20 @@
+# Core Django
+Django==4.2.7
+
+# Django REST Framework
+djangorestframework==3.14.0
+
+# PostgreSQL adapter
+psycopg2-binary==2.9.9
+
+# Testing
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# HTTP requests
+requests==2.31.0
+

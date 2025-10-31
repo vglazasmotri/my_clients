@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  db:
+    image: postgres:15-alpine
+    container_name: tdd_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tdd_db}
+      POSTGRES_USER: ${POSTGRES_USER:-tdd_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tdd_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tdd_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django backend приложение
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tdd_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+      - backend_static:/app/staticfiles
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python manage.py check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx reverse proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: tdd_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - backend_static:/staticfiles:ro
+
+volumes:
+  postgres_data:
+  backend_static:
+
